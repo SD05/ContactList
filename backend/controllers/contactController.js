@@ -1,12 +1,13 @@
 const asyncHandler = require("express-async-handler");
 
 const Contact = require("../models/contactModel");
+const User = require("../models/userModel");
 
 // @desc    Get Contacts
 // @route   Get /api/goals
 // @access  Public
 const getContacts = asyncHandler(async (req, res) => {
-  const contacts = await Contact.find();
+  const contacts = await Contact.find({ user: req.user.id });
 
   res.status(200).json(contacts);
 });
@@ -29,13 +30,19 @@ const setContacts = asyncHandler(async (req, res) => {
   }
 
   // Create Contact
-  const contact = await Contact.create({ name, number, number2 });
+  const contact = await Contact.create({
+    user: req.user.id,
+    name,
+    number,
+    number2,
+  });
   if (contact) {
     res.status(201).json({
       _id: contact.id,
       name: contact.name,
       number: contact.number,
       number2: contact.number2,
+      user: contact.user,
     });
   } else {
     res.status(400);
@@ -53,6 +60,19 @@ const updateContacts = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("Contact not found");
   }
+
+  // Check for User
+  if (!req.user) {
+    res.status(401);
+    throw new Error("User not Found");
+  }
+
+  // Make sure the logged in user matches with the goal user
+  if (contact.user.toString() !== req.user.id) {
+    res.status(401);
+    throw new Error("User Not Authorized");
+  }
+
   const updatedContact = await Contact.findByIdAndUpdate(
     req.params.id,
     req.body,
@@ -67,13 +87,13 @@ const updateContacts = asyncHandler(async (req, res) => {
 // @route   DELETE /api/goals
 // @access  Public
 const deleteContacts = asyncHandler(async (req, res) => {
-  const goal = await Goal.findById(req.params.id);
-  if (!goal) {
+  const contact = await Contact.findById(req.params.id);
+  if (!contact) {
     res.status(400);
     throw new Error("Goal not found");
   }
-  const deleteGoal = await Goal.findByIdAndRemove(req.params.id);
-  res.status(200).json(deleteGoal);
+  const deleteContact = await Contact.findByIdAndRemove(req.params.id);
+  res.status(200).json(deleteContact);
 });
 
 module.exports = { getContacts, setContacts, updateContacts, deleteContacts };
