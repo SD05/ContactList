@@ -22,19 +22,19 @@ function Dashboard() {
 
     if (!user) {
       navigate("/login");
+    } else {
+      dispatch(getContacts());
     }
 
-    dispatch(getContacts());
-
-    // return () => {
-    //   dispatch(reset());
-    // };
+    return () => {
+      dispatch(reset());
+    };
   }, [user, navigate, isError, message, dispatch]);
 
   if (isLoading) {
     return <Spinner />;
   }
-  debugger;
+
   return (
     <>
       <section className="heading">
